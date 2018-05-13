@@ -6,25 +6,21 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(tidyverse)
+library(devtools)
+
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+ 
+```{r load_data}
+Data = read.csv("~/Documents/CMSC/CMSC320/FinalProject/games.csv") %>%
+  mutate(first_white_move = gsub(" .*$", "", moves)) %>%
+  mutate(first_black_move = gsub(" .*$", "", gsub("^[^ ]* ", "", moves))) %>%
+  mutate(opening_name = gsub(":.*$", "", opening_name)) %>%
+  mutate(opening_name = gsub(" #.*$", "", opening_name)) %>%
+  mutate(rating_diff = white_rating - black_rating) %>%
+  select(rated, white_rating, black_rating, rating_diff, turns, winner, first_white_move, first_black_move, opening_name) 
+Data
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
