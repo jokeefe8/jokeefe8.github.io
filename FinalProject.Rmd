@@ -13,12 +13,14 @@ plot(chss)
 (Figure 1: Simple Sicilian Defense)
 
 ### Motivation
-As an avid young chess player, many of my early elementary and middle school weekends were spent playing in regional chess tourtamnets inside of school gymnasiums. While chess is certainly not a game that everybody will enjoy, it offers a great mental workout and helps to develop patience, long term planning, and memmorization. Besides memorizing the different pieces and the ways they move, along with specific tactics like how to balance attacks and how to control the pace of the game, finding the right opening to play against a specific opponent was often a large part of the chess game itself. My goal with this data analysis is to predict which openings provide the best chance for victory based upon the skill level of the opponent that you are facing. Essentially, we want to be able to determine the best opening to play before the game even begins. 
+As an avid young chess player, many of my early elementary and middle school weekends were spent playing in regional chess tourtamnets inside of school gymnasiums. While chess is certainly not a game that everybody will enjoy, it offers a great mental workout and helps to develop patience, long term planning, and memmorization. Besides memorizing the different pieces and the ways they move, along with specific tactics like how to balance attacks and how to control the pace of the game, finding the right opening to play against a specific opponent was often a large part of the chess game itself. Grandmasters and chess professionals spend hours studying potential openings and methods of play. My goal with this data analysis is to predict which openings provide the best chance for victory based upon the skill level of the opponent that you are facing. Essentially, we want to be able to determine the best opening to play before the game even begins. 
 
 ### Background
 I found a large dataset of over 20,000 datapoints refering to complete chess games played on Lichess.org, a free to play chess server that hosts over 1 million games per day. https://www.kaggle.com/datasnaek/chess. 
 
-This analysis will focus on the ratings of the white and black players along with the opening code, the winner of the game, and the specific first move played by both the white and black players in the game. While the ratings are numeric, the opening code, winner of the game, and the first move from each player are all categorical and must be treated as such. We will focusing only on games that ended in a victory either for white or black. Including stalemates will only serve to cloud the analysis. 
+This analysis will focus on the ratings of the white and black players along with the opening code, the winner of the game, and the specific first move played by both the white and black players in the game. While the ratings are numeric, the opening code, winner of the game, and the first move from each player are all categorical and must be treated as such. We will focusing only on games that ended in a victory either for white or black. Including stalemates will only serve to cloud the analysis. In addition, we will also take a look at predicting black's first move based on the first move played by white for differnet ratings. 
+
+Note: In chess notation, for the set of moves e4, Nc6, the first move corresponds to white moving a pawn to the square e4. e is the column and 4 is the row on the chessboard. Nc6 corresponds to the knight moving to the sixth row on the third column of the chess set. The data analysis will focus on mainly these sets of moves, but for additional information on chess notation, see [here](https://lichess.org/training/coordinate).
 
 ### Original Problem
 The creator of the dataset "Mitchel, J" created the dataset primarily to analyze
@@ -53,16 +55,15 @@ First we downloaded the dataset from Kaggle and then put the dataset within the 
 
 Game ID (id) <br> Rated (rated) <br> Start Time (created_at) <br> End Time(last_move_at:) <br> Number of Turns (turns) <br> Game Status (victory_status: draw, outoftime, mate, resign) <br> Winner (winner: white, black, draw) <br> Time Increment (increment_code: minutes+seconds) <br> White Player ID (white_id) <br> White Player Rating (white_rating) <br> Black Player ID (black_id) <br> Black Player Rating (black_rating) <br> All Moves in Standard Chess Notation (moves) <br> Opening Code (opening_eco) <br> Opening Name (opening_name) <br> and Opening Length (opening_ply). 
 
-
 ```{r data_collection}
 raw_data = read.csv("~/Documents/CMSC/CMSC320/FinalProject/games.csv")
 slice(raw_data, 1:n())
 ```
  
 # II. Data Processing
-For our analysis, we drop the rows containing the games that either ended in a draw or ended because one player ran out of time. Draws will only cloud the vistory predictions and games that ran out of time offer no indication as to which player was actually winning in the match. Since the analysis is independant of the specific individuals playing the game, then for the analysis, we can get rid of the id, white_id, and black_id columns. For this analysis, the amount of time that the game took is not a signifigant factor and therefor any column pretaining to the time of the game was also removed. This includes the created_at, last_move_at, and the increment_code columns of the dataframe. To help simplify the analysis, we also don't want to concern ourselves with games that ended either in a draw, or ended due to time constraints. In these games it is difficult to evaluate the success of the opening itself and the other factors, since there are many conditions that can result in draws or one player loosing because of time even if that player has a large in-game advantage. 
+For our analysis, we drop the rows containing the games that either ended in a draw or ended because one player ran out of time. Draws will only cloud the vistory predictions and games that ran out of time offer no indication as to which player was actually winning in the match. Since the analysis is independent of the specific individuals playing the game, then for the analysis, we can get rid of the id, white_id, and black_id columns. For this analysis, the amount of time that the game took is not a signifigant factor and therefor any column pretaining to the time of the game was also removed. This includes the created_at, last_move_at, and the increment_code columns of the dataframe. To help simplify the analysis, we also don't want to concern ourselves with games that ended either in a draw, or ended due to time constraints. In these games it is difficult to evaluate the success of the opening itself and the other factors, since there are many conditions that can result in draws or one player loosing because of time even if that player has a large in-game advantage. 
 
-For example, the following game is considered a stalemate since black hos no valid moves and is not in check, even though white has a signifigant advantage.
+For example, the following game is considered a stalemate since black has no valid moves and is not in check, even though white has a signifigant advantage.
 
 ```{r, echo=FALSE}
 library(rchess)
@@ -86,7 +87,7 @@ Data <- raw_data%>%
 slice(Data, 1:n())
 ```
 
-Now that we have cleaned up the dataset and removed all of the unnecessisary colums, the next step in the data preparation is to standardize the player ratings. One of the reasons that standardizing the player ratings is so important is that these ratings are somewhat arbitrary and are distributed by the site themselves. For example, a rating of 1000 might seem like a high rating, but for some sites, a rating of 1000 is the rating given to players who have just created an account. Since the website itself does not release how it calculates player rating, the best way to make player rating more meaningful is to standardize the white and black ratings. The new standardized rating (rating - mean(rating)/std(rating)) Will give values close to zero or negative for beginners and larger positive values to more experienced players which is more useful for the data analysis itself. 
+Now that we have cleaned up the dataset and removed all of the unnecessisary colums, the next step in the data preparation is to standardize the player ratings. One of the reasons that standardizing the player ratings is so important is that these ratings are somewhat arbitrary and are distributed by the site themselves. For example, a rating of 1000 might seem like a high rating, but for some sites, a rating of 1000 is the rating given to players who have just created an account. Since the website itself does not release how it calculates player rating, the best way to make player rating more meaningful is to standardize the white and black ratings. The new standardized rating (rating - mean(rating)/std(rating)) will give values close to zero or negative for beginners and larger positive values to more experienced players which is more useful for the data analysis itself. 
 
 ```{r standardize_ratings}
 total_ratings = c(Data$white_rating, Data$black_rating)
@@ -108,18 +109,21 @@ Now that we have tidied and processed the data, we can move on to the next part 
 
 # III. Exploratory Data Analysis and Visualization
 
-For graphing and data analysis, we will be using ggplot2 along with the rvest, broom, and randomforest libraries. 
+For graphing and data analysis, we will be using ggplot2 along with the rvest, broom, and randomForest libraries. 
 
-####Sample Analysis: Analyzing how standardized player rating and the number of turns affects the outcome of the game. 
+####Sample Analysis: Analyzing how standardized player rating and the number of turns affects the outcome of the game.
+
+To begin our analysis, we will first create a plot of the number of turns per game versus the standardized rating differnece. In the graph, we color victories for white as blue and the victories for black as orange. 
+
 ```{r turns_vs_ratinggap}
 std_Data %>% 
   ggplot(aes(x=turns,y=std_rating_diff, color=winner)) + geom_point() +
   labs(title="Difference in player rating vs. the number of turns it takes.", x="Game Length", y="Standardized Rating Difference")
 ```
 
-As expected, there seems to be a very direct correlation between the difference in rating between the two players and the winner of the game. Remember that if the rating differnece is negative, then Black is the higher rated player, and if the rating difference is positive, then white is the higher rated player. There is also a small presence of outliers for both the white and black teams, which could indicate the winner being new on the site but still an accomplished chess player. 
+As expected, there seems to be a very direct correlation between the difference in rating between the two players and the winner of the game. Remember that if the rating differnece is negative, then Black is the higher rated player, and if the rating difference is positive, then white is the higher rated player. There is also a small presence of outliers for both the white and black teams, which could be influenced by many factors such as the winner being new on the site but still an accomplished chess player. 
 
-Next we will create a bar chart displaying the effect that the first move has on white's chances of wining the game. This victory percentage is calculated by simply looking at every game with the same first move and calculating #(games white won) / #(games played). We can already notice that many of the bars are centered around 0.5 or no relation between the opening move and who wins the game. 
+Next we will create a bar chart displaying the effect that the first move has on white's chances of wining the game. This victory percentage is calculated by simply looking at every game with the same first move and calculating #(games white won) / #(games played). We can already notice that many of the bars are centered around 0.5 or no relation between the opening move and who wins the game. Several of the moves however like h4 or Na3 
 
 ```{r black_first_move}
 std_Data %>% 
@@ -146,7 +150,7 @@ std_Data %>% filter(opening_name %in% most_common) %>%
   labs(title="Opening Style vs. Victory Percentage", x="Opening Style", y="White victory percentage") +   theme(axis.text.x=element_text(angle=90, hjust=1))
 ```
 
-Looking at this graph, there seems to be a more noticable differnece between the effect of the opening style on both white and consequently black's winning percentages versus the effect that each side's opening move had on these chances. Bar plots might be nice and easy to look at, but they really don't offer enough to adequately state wether or not two variables have a direct relationship. To do that, we will try to create a clasification model containing the same variables. Based upon the graphs that we have made, Four possible classification models could include rating difference, standardized rating diff, rating difference and opening name, and standardized rating difference and opening name. 
+Looking at this graph, there seems to be a more noticable differnece between the effect of the opening style on both white and consequently black's winning percentages versus the effect that each side's opening move had on these chances. Bar plots might be nice and easy to look at, but they really don't offer enough information to adequately state whether or not two variables have a direct relationship. To do that, we will try to create a clasification model containing the same variables. Based upon the graphs that we have made, Four possible classification models could include rating difference, standardized rating diff, rating difference and opening name, and standardized rating difference and opening name. 
 
 One last analysis we can make before creating a classification model is to look at the probability of black's opening move after white's opening move. 
 
@@ -166,28 +170,32 @@ for (i in 1:10) {
 }
 ```
 
-As expected, by looking at all of the seperate graphs, we can see a very marked correlation between white's first move and black's first move. By this judgement, a classification model based on predicting black's first move based on white's first move should perform fairly well. 
+As expected, by looking at all of the seperate graphs, we can see a very marked correlation between white's first move and black's first move. By this judgement, it is likely that a classification model based on predicting black's first move based on white's first move should perform fairly well. 
 
 # IV. Analysis and Machine Learning
 
-Now that we have performed introductory data analysis on the chess data set, we can create machine learning models that can attempt to predict the first move played by black based on the first move performed by white. In this instance, we can compare different classification algorithms to see which performs best on the given chess dataset. For this, we will be using Random forest and Decision tree classifiers and cross validation
+Now that we have performed introductory data analysis on the chess data set, we can create machine learning models that can attempt to predict the first move played by black based on the first move performed by white. In this instance, we can compare different classification algorithms to see which performs best on the given chess dataset. For this, we will be using a Random Forest Classifier and Decision Tree Classifiers and we will then cross validate these models to determine which classification model better suits the data. 
 
-Cross validation is a way of testing if our classification works well. We are given a set of data in which we choose to split it up into two groups known as training and testing. In our case, we will make 10 random splits of the dataset each at a 90% training set, 10% test set. We will use the training data to allow our decision tree and random forests to be built. Then we will use the testing data in order to see how well our classifier does. If it doens't do as well as we expected, we may have overfitted our classifier on the training data and so we may need to prune the tree by changing specific parameters. 
+Cross validation is a way of testing if our classification works well. We are given a set of data and choose to split it up into two groups known as the training group and the testing group. In our case, we will make 10 random splits of the dataset each at a 90% training set, 10% test set. We will use the training data to allow our decision tree and random forests to be built. Then we will use the testing data in order to see how well our classifier does. If it doens't do as well as we expected, we may have included unnecessisary factor varialbes within the regression model or we may have overfitted our classifier on the training data and so we may need to prune the tree by changing specific parameters. 
 
 ### Random Forest Cross Validation
 ```{r whiteblack_cross-validation}
+# Dataset for model 1 which only includes Black's first move
 wb_data <- std_Data %>%
   mutate(wfm = as.factor(first_white_move)) %>%
   mutate(bfm = as.factor(first_black_move)) %>%   
   select(wfm, bfm)
 
+# Dataset for model 1 which includes Black's first move along with the standardized rating difference between white and black. 
 wb_data_rated <- std_Data %>%
   mutate(wfm = as.factor(first_white_move)) %>%
   mutate(bfm = as.factor(first_black_move)) %>%   
   select(wfm, bfm, std_rating_diff)
 
+# Create indicies to make random training and testing sets from.
 fold_indices <- cvFolds(n=nrow(wb_data), K=10)
 
+# Train and test each of the 10 random datasets and find the error rates from each trial. 
 error_rates <- sapply(1:10, function(fold_index) {
   test_indices <- which(fold_indices$which == fold_index)
   test_set <- wb_data[test_indices,]
@@ -195,24 +203,29 @@ error_rates <- sapply(1:10, function(fold_index) {
   test_set_r <- wb_data_rated[test_indices,]
   train_set_r <- wb_data_rated[-test_indices,]
 
+  # Create random forest classifier based on black's first move
   rf <- randomForest(bfm~., data=train_set)
   rf_pred <- predict(rf, newdata=test_set, type="class")
   rf_error <- mean(test_set$bfm != rf_pred)
   
+  # Create random forest classifier based on black's first move and on the standardized rating difference. 
   rf_ratings <- randomForest(bfm~., data=train_set_r)
   rf_pred_ratings <- predict(rf_ratings, newdata=test_set_r, type="class")
   rf_error_ratings <- mean(test_set_r$bfm != rf_pred_ratings)
   
+  # Create decision tree classifier based on black's first move
   tree_fit <- tree(bfm~., data=train_set)
   pruned_tree <- prune.tree(tree_fit, best=2)
   tree_pred <- predict(pruned_tree, newdata=test_set, type="class")
   tree_error <- mean(test_set$bfm != tree_pred)
   
+  # Create decision tree classifier based on black's first move and on the standardized rating difference. 
   tree_fit_rating <- tree(bfm~., data=train_set_r)
   pruned_tree_rating <- prune.tree(tree_fit_rating, best=2)
   tree_pred_rating <- predict(pruned_tree_rating, newdata=test_set_r, type="class")
   rated_tree_error <- mean(test_set_r$bfm != tree_pred_rating)
   
+  # return the error of each classifier 
   c(rf_error, tree_error, rf_error_ratings, rated_tree_error)
   })
 
@@ -223,6 +236,7 @@ error_rates <- error_rates %>%
   mutate(fold=1:n()) %>%
   gather(method,error,-fold)
 
+# perform regression on the error rates to determine p values and which method had the least overall error.
 lm(error~method, data=error_rates) %>% 
   tidy() %>%
   knitr::kable()
@@ -250,6 +264,7 @@ Now that we know there exists a relationship between the chosen opening and the 
 ```{r cross-validation, warning=FALSE, message=FALSE}
 set.seed(2434)
 
+# Dataset for model 1 which only include the standardized rating difference
 std_Data_cross <- std_Data %>%
   filter(opening_name %in% names(sort(table(std_Data$opening_name),decreasing=TRUE)[1:10])) %>%
   select(winner, std_rating_diff) %>%
@@ -275,6 +290,7 @@ Data_cross_open <- std_Data %>%
 fold_indices <- cvFolds(n=nrow(std_Data_cross), K=10)
 
 error_rates <- sapply(1:10, function(fold_index) {
+  # create training and test set for each classification model
   test_indices <- which(fold_indices$which == fold_index)
   test_set_s <- std_Data_cross[test_indices,] %>% droplevels()
   train_set_s <- std_Data_cross[-test_indices,] %>% droplevels()
@@ -323,7 +339,8 @@ Now that we have created a classification model, we can evaluate it using probab
 ```{r auroc, warning=FALSE, error=FALSE, message=FALSE}
 library(ROCR)
 
-set.seed(2911)
+set.seed(2434)
+# create a AUROC curve for the random forest classifier without the standardized rating differential
 r <- randomForest(winner~., data=Data_cross)
 r_pred <- predict(r, data=Data_cross, type="prob")
 pred <- prediction(r_pred[,"white"], Data_cross$winner)

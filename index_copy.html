@@ -130,8 +130,8 @@ $(document).ready(function () {
 
 <div id="how-to-always-be-one-step-ahead-lichess-game-record-dataset-analysis" class="section level1">
 <h1>How to Always Be One Step Ahead: Lichess Game Record Dataset Analysis</h1>
-<p><div id="htmlwidget-d476a01315025e7b3edb" style="width:300px;height:300px;" class="chessboardjs html-widget"></div>
-<script type="application/json" data-for="htmlwidget-d476a01315025e7b3edb">{"x":{"fen":"rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2"},"evals":[],"jsHooks":[]}</script> (Figure 1: Simple Sicilian Defense)</p>
+<p><div id="htmlwidget-c136f64f066688716c09" style="width:300px;height:300px;" class="chessboardjs html-widget"></div>
+<script type="application/json" data-for="htmlwidget-c136f64f066688716c09">{"x":{"fen":"rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2"},"evals":[],"jsHooks":[]}</script> (Figure 1: Simple Sicilian Defense)</p>
 <div id="motivation" class="section level3">
 <h3>Motivation</h3>
 <p>As an avid young chess player, many of my early elementary and middle school weekends were spent playing in regional chess tourtamnets inside of school gymnasiums. While chess is certainly not a game that everybody will enjoy, it offers a great mental workout and helps to develop patience, long term planning, and memmorization. Besides memorizing the different pieces and the ways they move, along with specific tactics like how to balance attacks and how to control the pace of the game, finding the right opening to play against a specific opponent was often a large part of the chess game itself. My goal with this data analysis is to predict which openings provide the best chance for victory based upon the skill level of the opponent that you are facing. Essentially, we want to be able to determine the best opening to play before the game even begins.</p>
@@ -193,8 +193,8 @@ slice(raw_data, 1:n())</code></pre>
 <h1>II. Data Processing</h1>
 <p>For our analysis, we drop the rows containing the games that either ended in a draw or ended because one player ran out of time. Draws will only cloud the vistory predictions and games that ran out of time offer no indication as to which player was actually winning in the match. Since the analysis is independant of the specific individuals playing the game, then for the analysis, we can get rid of the id, white_id, and black_id columns. For this analysis, the amount of time that the game took is not a signifigant factor and therefor any column pretaining to the time of the game was also removed. This includes the created_at, last_move_at, and the increment_code columns of the dataframe. To help simplify the analysis, we also don’t want to concern ourselves with games that ended either in a draw, or ended due to time constraints. In these games it is difficult to evaluate the success of the opening itself and the other factors, since there are many conditions that can result in draws or one player loosing because of time even if that player has a large in-game advantage.</p>
 <p>For example, the following game is considered a stalemate since black hos no valid moves and is not in check, even though white has a signifigant advantage.</p>
-<p><div id="htmlwidget-74297195968c21fe838a" style="width:300px;height:300px;" class="chessboardjs html-widget"></div>
-<script type="application/json" data-for="htmlwidget-74297195968c21fe838a">{"x":{"fen":"4k3/4P3/4K3/4Q3/8/8/8/8 b - - 0 78"},"evals":[],"jsHooks":[]}</script> <br> To help with the analysis of the opening and to allow for the potential clsassification algorithm to have acceptable performance, instead of looking at all the moves contained within the entire game, we will restrict the analysis to just the first move from each player. There are nearly endless combinations of moves that can be played in a chess game, and only very strong and sophisticated classification algorithms can properly analyze whole games. To make sure that data maintains tidy format and to help with the analysis, the first move from each player is given it’s own column, first_white_move and first_black_move.</p>
+<p><div id="htmlwidget-939f62f3f7ce5c42ac91" style="width:300px;height:300px;" class="chessboardjs html-widget"></div>
+<script type="application/json" data-for="htmlwidget-939f62f3f7ce5c42ac91">{"x":{"fen":"4k3/4P3/4K3/4Q3/8/8/8/8 b - - 0 78"},"evals":[],"jsHooks":[]}</script> <br> To help with the analysis of the opening and to allow for the potential clsassification algorithm to have acceptable performance, instead of looking at all the moves contained within the entire game, we will restrict the analysis to just the first move from each player. There are nearly endless combinations of moves that can be played in a chess game, and only very strong and sophisticated classification algorithms can properly analyze whole games. To make sure that data maintains tidy format and to help with the analysis, the first move from each player is given it’s own column, first_white_move and first_black_move.</p>
 <pre class="r"><code>Data &lt;- raw_data%&gt;%
   filter(victory_status != &quot;draw&quot;, victory_status != &quot;outoftime&quot;) %&gt;%
   mutate(first_white_move = gsub(&quot; .*$&quot;, &quot;&quot;, moves)) %&gt;%
@@ -369,30 +369,30 @@ lm(error~method, data=error_rates) %&gt;%
 <tr class="odd">
 <td align="left">(Intercept)</td>
 <td align="right">0.5279126</td>
-<td align="right">0.0026077</td>
-<td align="right">202.4402545</td>
-<td align="right">0.0000000</td>
+<td align="right">0.0026522</td>
+<td align="right">199.0487497</td>
+<td align="right">0.000000</td>
 </tr>
 <tr class="even">
 <td align="left">methodDecision Tree with Rating</td>
 <td align="right">0.0000000</td>
-<td align="right">0.0036879</td>
+<td align="right">0.0037507</td>
 <td align="right">0.0000000</td>
-<td align="right">1.0000000</td>
+<td align="right">1.000000</td>
 </tr>
 <tr class="odd">
 <td align="left">methodRandom Forest</td>
-<td align="right">-0.0000573</td>
-<td align="right">0.0036879</td>
-<td align="right">-0.0155390</td>
-<td align="right">0.9876879</td>
+<td align="right">0.0003433</td>
+<td align="right">0.0037507</td>
+<td align="right">0.0915324</td>
+<td align="right">0.927577</td>
 </tr>
 <tr class="even">
 <td align="left">methodRandom Forest with Ratings</td>
-<td align="right">-0.0014888</td>
-<td align="right">0.0036879</td>
-<td align="right">-0.4037039</td>
-<td align="right">0.6888186</td>
+<td align="right">-0.0013171</td>
+<td align="right">0.0037507</td>
+<td align="right">-0.3511481</td>
+<td align="right">0.727524</td>
 </tr>
 </tbody>
 </table>
@@ -534,14 +534,9 @@ dotplot(error~method, data=error_rates, ylab=&quot;Mean Prediction Error&quot;, 
 </tbody>
 </table>
 <p>Now that we have created a classification model, we can evaluate it using probability cutoffs to trade, e.g., TPR-FPR (ROC curve), or precision-recall (PR curve). An Area under ROC curve or (AUROC) summarizes classifier performance across different cutoffs.</p>
-<pre class="r"><code>library(ROCR)</code></pre>
-<pre><code>## Loading required package: gplots</code></pre>
-<pre><code>## 
-## Attaching package: 'gplots'</code></pre>
-<pre><code>## The following object is masked from 'package:stats':
-## 
-##     lowess</code></pre>
-<pre class="r"><code>set.seed(2911)
+<pre class="r"><code>library(ROCR)
+
+set.seed(2911)
 r &lt;- randomForest(winner~., data=Data_cross)
 r_pred &lt;- predict(r, data=Data_cross, type=&quot;prob&quot;)
 pred &lt;- prediction(r_pred[,&quot;white&quot;], Data_cross$winner)
